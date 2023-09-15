@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/gob"
 	"log"
 	"net/http"
 	"time"
@@ -8,6 +9,7 @@ import (
 	"github.com/alexedwards/scs/v2"
 	"github.com/robert-gherlan/go-booking-web-app/internal/config"
 	"github.com/robert-gherlan/go-booking-web-app/internal/handlers"
+	"github.com/robert-gherlan/go-booking-web-app/internal/models"
 	"github.com/robert-gherlan/go-booking-web-app/internal/render"
 )
 
@@ -18,6 +20,7 @@ var session *scs.SessionManager
 
 // main is the entry point that starts the web server on 8080 port.
 func main() {
+
 	err := run()
 	if err != nil {
 		log.Fatal(err)
@@ -50,7 +53,7 @@ func main() {
 }
 
 func run() error {
-
+	gob.Register(models.Reservation{})
 	// Change this to true when in production
 	app.InProduction = false
 

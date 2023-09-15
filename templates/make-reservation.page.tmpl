@@ -7,7 +7,7 @@
             <h1>Make reservation</h1>
             <p><strong>Reservation Details</strong>></p>
             {{$res := index .Data "reservation"}}
-            <form action="" method="POST" class="" novalidate>
+            <form action="/make-reservation" method="POST" class="needs-validation" novalidate>
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
                 <div class="form-group mt-5">
@@ -34,7 +34,7 @@
                     <label class="text-danger">{{.}}</label>
                     {{end}}
                     <input class="form-control {{with .Form.Errors.Get " email_address"}} is-invalid {{end}}"
-                        type="text" name="email_address" id="email_address" value="{{$res.EmailAddress}}" required
+                        type="email" name="email_address" id="email_address" value="{{$res.EmailAddress}}" required
                         autocomplete="off">
                 </div>
 
@@ -43,7 +43,7 @@
                     {{with .Form.Errors.Get "phone_number"}}
                     <label class="text-danger">{{.}}</label>
                     {{end}}
-                    <input class="form-control {{with .Form.Errors.Get " phone_number"}} is-invalid {{end}}" type="text"
+                    <input class="form-control {{with .Form.Errors.Get " phone_number"}} is-invalid {{end}}" type="tel"
                         name="phone_number" id="phone_number" value="{{$res.PhoneNumber}}" required autocomplete="off">
                 </div>
                 <hr>

@@ -18,19 +18,24 @@ func routes(app *config.AppConfig) http.Handler {
 	mux.Use(NoSurf)
 	mux.Use(SessionLoad)
 
-	// Register the routes
+	// Register the basic routes
 	mux.Get("/", handlers.Repo.Home)
 	mux.Get("/about", handlers.Repo.About)
 	mux.Get("/contact", handlers.Repo.Contact)
-	mux.Get("/make-reservation", handlers.Repo.Reservation)
 	mux.Get("/generals", handlers.Repo.Generals)
 	mux.Get("/majors", handlers.Repo.Majors)
 
+	// Search Availability Routes
 	mux.Get("/search-availability", handlers.Repo.Availability)
 	mux.Post("/search-availability", handlers.Repo.PostAvailability)
 	mux.Post("/search-availability-json", handlers.Repo.AvailabilityJSON)
 
+	// Reservation Summary Routes
 	mux.Get("/reservation-summary", handlers.Repo.ReservationSummary)
+
+	// Make Reservation Routes
+	mux.Get("/make-reservation", handlers.Repo.Reservation)
+	mux.Post("/make-reservation", handlers.Repo.PostReservation)
 
 	// Enable reading from the static folder
 	fileServer := http.FileServer(http.Dir("./static/"))
