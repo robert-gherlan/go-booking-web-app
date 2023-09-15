@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 
 	"github.com/justinas/nosurf"
-	"github.com/robert-gherlan/go-booking-web-app/pkg/config"
-	"github.com/robert-gherlan/go-booking-web-app/pkg/models"
+	"github.com/robert-gherlan/go-booking-web-app/internal/config"
+	"github.com/robert-gherlan/go-booking-web-app/internal/models"
 )
 
 var (

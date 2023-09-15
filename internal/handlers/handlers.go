@@ -6,9 +6,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/robert-gherlan/go-booking-web-app/pkg/config"
-	"github.com/robert-gherlan/go-booking-web-app/pkg/models"
-	"github.com/robert-gherlan/go-booking-web-app/pkg/render"
+	"github.com/robert-gherlan/go-booking-web-app/internal/config"
+	"github.com/robert-gherlan/go-booking-web-app/internal/models"
+	"github.com/robert-gherlan/go-booking-web-app/internal/render"
 )
 
 // Repo the repository used by the handlers

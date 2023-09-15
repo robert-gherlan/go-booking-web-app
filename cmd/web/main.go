@@ -6,9 +6,9 @@ import (
 	"time"
 
 	"github.com/alexedwards/scs/v2"
-	"github.com/robert-gherlan/go-booking-web-app/pkg/config"
-	"github.com/robert-gherlan/go-booking-web-app/pkg/handlers"
-	"github.com/robert-gherlan/go-booking-web-app/pkg/render"
+	"github.com/robert-gherlan/go-booking-web-app/internal/config"
+	"github.com/robert-gherlan/go-booking-web-app/internal/handlers"
+	"github.com/robert-gherlan/go-booking-web-app/internal/render"
 )
 
 const portNumber = ":8080"
