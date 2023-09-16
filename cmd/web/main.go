@@ -20,24 +20,10 @@ var session *scs.SessionManager
 
 // main is the entry point that starts the web server on 8080 port.
 func main() {
-
 	err := run()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	// Init the template cache
-	tc, err := render.CreateTemplateCache()
-	if err != nil {
-		log.Fatalln("Cannot create the template cache")
-	}
-	app.TemplateCache = tc
-	render.NewTemplates(&app)
-
-	// Init the handlers repo
-	repo := handlers.NewRepo(&app)
-	handlers.NewHandlers(repo)
-	render.NewTemplates(&app)
 
 	// Start the web server
 	log.Printf("Starting the web server on %s port.", portNumber)
@@ -54,6 +40,7 @@ func main() {
 
 func run() error {
 	gob.Register(models.Reservation{})
+
 	// Change this to true when in production
 	app.InProduction = false
 
@@ -77,7 +64,6 @@ func run() error {
 
 	repo := handlers.NewRepo(&app)
 	handlers.NewHandlers(repo)
-
 	render.NewTemplates(&app)
 
 	return nil
