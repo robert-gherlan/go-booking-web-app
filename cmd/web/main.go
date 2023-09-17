@@ -4,11 +4,13 @@ import (
 	"encoding/gob"
 	"log"
 	"net/http"
+	"os"
 	"time"
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/robert-gherlan/go-booking-web-app/internal/config"
 	"github.com/robert-gherlan/go-booking-web-app/internal/handlers"
+	"github.com/robert-gherlan/go-booking-web-app/internal/helpers"
 	"github.com/robert-gherlan/go-booking-web-app/internal/models"
 	"github.com/robert-gherlan/go-booking-web-app/internal/render"
 )
@@ -17,6 +19,8 @@ const portNumber = ":8080"
 
 var app config.AppConfig
 var session *scs.SessionManager
+var infoLog *log.Logger
+var errorLog *log.Logger
 
 // main is the entry point that starts the web server on 8080 port.
 func main() {
@@ -44,6 +48,14 @@ func run() error {
 	// Change this to true when in production
 	app.InProduction = false
 
+	// Setup loggers
+	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
+	app.InfoLog = infoLog
+
+	errorLog := log.New(os.Stdout, "ERROR\t", log.Ldate|log.Ltime|log.Lshortfile)
+	app.ErrorLog = errorLog
+
+	// Set session configuration
 	session = scs.New()
 	session.Lifetime = 24 * time.Hour
 	// cookie persist after the browser window is closed by the end user
@@ -65,6 +77,7 @@ func run() error {
 	repo := handlers.NewRepo(&app)
 	handlers.NewHandlers(repo)
 	render.NewTemplates(&app)
+	helpers.NewHelpers(&app)
 
 	return nil
 }
