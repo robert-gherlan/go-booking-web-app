@@ -9,6 +9,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/robert-gherlan/go-booking-web-app/internal/config"
+	"github.com/robert-gherlan/go-booking-web-app/internal/driver"
 	"github.com/robert-gherlan/go-booking-web-app/internal/handlers"
 	"github.com/robert-gherlan/go-booking-web-app/internal/helpers"
 	"github.com/robert-gherlan/go-booking-web-app/internal/models"
@@ -24,10 +25,11 @@ var errorLog *log.Logger
 
 // main is the entry point that starts the web server on 8080 port.
 func main() {
-	err := run()
+	db, err := run()
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.SQL.Close()
 
 	// Start the web server
 	log.Printf("Starting the web server on %s port.", portNumber)
@@ -42,8 +44,12 @@ func main() {
 	}
 }
 
-func run() error {
+func run() (*driver.DB, error) {
 	gob.Register(models.Reservation{})
+	gob.Register(models.User{})
+	gob.Register(models.Room{})
+	gob.Register(models.RoomRestriction{})
+	gob.Register(models.Restriction{})
 
 	// Change this to true when in production
 	app.InProduction = false
@@ -65,19 +71,28 @@ func run() error {
 
 	app.Session = session
 
+	// Connect to database
+	log.Println("Connecting to database")
+	db, err := driver.ConnectSQL("host=localhost port=5432 dbname=bookings user=postgres password=postgres")
+	if err != nil {
+		log.Fatal("Cannot connect to the database.")
+		return nil, err
+	}
+	app.InfoLog.Println("Connected to the database.")
+
 	tc, err := render.CreateTemplateCache()
 	if err != nil {
 		log.Fatal("cannot create template cache")
-		return err
+		return nil, err
 	}
 
 	app.TemplateCache = tc
 	app.UseCache = false
 
-	repo := handlers.NewRepo(&app)
+	repo := handlers.NewRepo(&app, db)
 	handlers.NewHandlers(repo)
-	render.NewTemplates(&app)
+	render.NewRenderer(&app)
 	helpers.NewHelpers(&app)
 
-	return nil
+	return db, nil
 }

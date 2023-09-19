@@ -39,26 +39,9 @@
 {{define "js"}}
 
 <script>
-    document.getElementById("check-availability-button").addEventListener("click", function () {
-        let html = `
-        <form id="check-availability-form" action="" method="post" novalidate class="needs-vaildation">
-            <div class="form-row">
-                <div class="col">
-                    <div class="form-row" id="reservation-dates-modal">
-                        <div class="mb-3">
-                            <input disabled required class="form-control" id="start" name="start" type="text" placeholder="Arrival">
-                        </div>
-                        <div class="mb-3">
-                            <input disabled required class="form-control" id="end" name="end" type="text" placeholder="Departure">
-                        </div>
-                    </div>
-                </div>
-            </div>			
-        </form>
-        `
-
-        attention.custom({ msg: html, title: "Choose your dates" });
-    })
+    document
+            .getElementById("check-availability-button")
+            .addEventListener("click", bookRoom("2"))
 </script>
 
 

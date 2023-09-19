@@ -4,14 +4,22 @@
 <div class="container">
     <div class="row">
         <div class="col">
-            <h1>Make reservation</h1>
-            <p><strong>Reservation Details</strong></p>
             {{$res := index .Data "reservation"}}
+            <h1>Make reservation</h1>
+            <p><strong>Reservation Details</strong><br />
+                Room: {{$res.Room.RoomName}}<br />
+                Arrival: {{index .StringMap "start_date"}}<br />
+                Departure: {{index .StringMap "end_date"}}
+            </p>
+
             <form action="/make-reservation" method="POST" class="needs-validation" novalidate>
-                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}" />
+                <input type="hidden" name="room_id" value="{{$res.RoomID}}" />
+                <input type="hidden" name="start_date" value="{{index .StringMap " start_date"}}" />
+                <input type="hidden" name="end_date" value="{{index .StringMap " end_date"}}" />
 
                 <div class="form-group mt-5">
-                    <label for="first_name">First Name: </label>
+                    <label for="first_name">First Name:</label>
                     {{with .Form.Errors.Get "first_name"}}
                     <label class="text-danger">{{.}}</label>
                     {{end}}
@@ -20,7 +28,7 @@
                 </div>
 
                 <div class="form-group mt-5">
-                    <label for="last_name">Last Name: </label>
+                    <label for="last_name">Last Name:</label>
                     {{with .Form.Errors.Get "last_name"}}
                     <label class="text-danger">{{.}}</label>
                     {{end}}
@@ -29,22 +37,21 @@
                 </div>
 
                 <div class="form-group mt-5">
-                    <label for="email">Email Address: </label>
-                    {{with .Form.Errors.Get "email_address"}}
+                    <label for="email">Email Address:</label>
+                    {{with .Form.Errors.Get "email"}}
                     <label class="text-danger">{{.}}</label>
                     {{end}}
-                    <input class="form-control {{with .Form.Errors.Get " email_address"}} is-invalid {{end}}"
-                        type="email" name="email_address" id="email_address" value="{{$res.EmailAddress}}" required
-                        autocomplete="off">
+                    <input class="form-control {{with .Form.Errors.Get " email"}} is-invalid {{end}}" type="email"
+                        name="email" id="email" value="{{$res.Email}}" required autocomplete="off">
                 </div>
 
                 <div class="form-group mt-5">
-                    <label for="phone">Phone Number: </label>
-                    {{with .Form.Errors.Get "phone_number"}}
+                    <label for="phone">Phone Number:</label>
+                    {{with .Form.Errors.Get "phone"}}
                     <label class="text-danger">{{.}}</label>
                     {{end}}
-                    <input class="form-control {{with .Form.Errors.Get " phone_number"}} is-invalid {{end}}" type="tel"
-                        name="phone_number" id="phone_number" value="{{$res.PhoneNumber}}" required autocomplete="off">
+                    <input class="form-control {{with .Form.Errors.Get " phone"}} is-invalid {{end}}" type="tel"
+                        name="phone" id="phone" value="{{$res.Phone}}" required autocomplete="off">
                 </div>
                 <hr>
                 <input type="submit" class="btn btn-primary" value="Make Reservation">

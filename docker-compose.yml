@@ -13,6 +13,8 @@ services:
       interval: 1s
       timeout: 5s
       retries: 10
+    ports:
+      - 5432:5432
     volumes:
       - pgdata:/var/lib/postgresql/data
 
@@ -20,4 +22,4 @@ services:
     image: adminer
     restart: always
     ports:
-      - 8080:8080
+      - 8081:8080
