@@ -10,6 +10,7 @@ import (
 
 	"github.com/alexedwards/scs/v2"
 	"github.com/robert-gherlan/go-booking-web-app/internal/config"
+	"github.com/robert-gherlan/go-booking-web-app/internal/helpers"
 	"github.com/robert-gherlan/go-booking-web-app/internal/models"
 )
 
@@ -18,12 +19,12 @@ var testApp config.AppConfig
 
 func TestMain(m *testing.M) {
 
+	// what am I going to put in the session
 	gob.Register(models.Reservation{})
 
-	// Change this to true when in production
+	// change this to true when in production
 	testApp.InProduction = false
 
-	// Setup loggers
 	infoLog := log.New(os.Stdout, "INFO\t", log.Ldate|log.Ltime)
 	testApp.InfoLog = infoLog
 
@@ -37,7 +38,25 @@ func TestMain(m *testing.M) {
 	session.Cookie.Secure = false
 
 	testApp.Session = session
+
 	app = &testApp
+	helpers.NewHelpers(app)
 
 	os.Exit(m.Run())
+}
+
+type myWriter struct{}
+
+func (tw *myWriter) Header() http.Header {
+	var h http.Header
+	return h
+}
+
+func (tw *myWriter) WriteHeader(i int) {
+
+}
+
+func (tw *myWriter) Write(b []byte) (int, error) {
+	length := len(b)
+	return length, nil
 }

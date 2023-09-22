@@ -28,3 +28,15 @@ func TestSessionLoad(t *testing.T) {
 		t.Error("type is not http.Handler")
 	}
 }
+
+func TestAuth(t *testing.T) {
+	var myHandler myHandler
+	h := Auth(&myHandler)
+
+	switch h.(type) {
+	case http.Handler:
+		// do nothing
+	default:
+		t.Error("type is not http.Handler")
+	}
+}

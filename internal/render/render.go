@@ -8,14 +8,21 @@ import (
 	"log"
 	"net/http"
 	"path/filepath"
+	"time"
 
 	"github.com/justinas/nosurf"
 	"github.com/robert-gherlan/go-booking-web-app/internal/config"
+	"github.com/robert-gherlan/go-booking-web-app/internal/helpers"
 	"github.com/robert-gherlan/go-booking-web-app/internal/models"
 )
 
 var (
-	functions       = template.FuncMap{}
+	functions = template.FuncMap{
+		"humanDate":  HumanDate,
+		"formatDate": FormatDate,
+		"iterate":    Iterate,
+		"add":        Add,
+	}
 	pathToTemplates = "./templates"
 )
 
@@ -26,12 +33,37 @@ func NewRenderer(a *config.AppConfig) {
 	app = a
 }
 
+// Iterate returns a slice of ints, starting at 1, going to count
+func Iterate(count int) []int {
+	var i int
+	var items []int
+	for i = 0; i < count; i++ {
+		items = append(items, i)
+	}
+	return items
+}
+
+// HumanDate return time in YYYY-MM-dd format
+func HumanDate(t time.Time) string {
+	return t.Format("2006-01-02")
+}
+
+func FormatDate(t time.Time, f string) string {
+	return t.Format(f)
+}
+
+func Add(a, b int) int {
+	return a + b
+}
+
 // AddDefaultData used to add default data to the template.
 func AddDefaultData(td *models.TemplateData, r *http.Request) *models.TemplateData {
 	td.Flash = app.Session.PopString(r.Context(), "flash")
 	td.Warning = app.Session.PopString(r.Context(), "warning")
 	td.Error = app.Session.PopString(r.Context(), "error")
 	td.CSRFToken = nosurf.Token(r)
+	td.IsAuthenticated = helpers.IsAuthenticated(r)
+
 	return td
 }
 

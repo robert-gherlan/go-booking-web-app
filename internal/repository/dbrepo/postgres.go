@@ -2,14 +2,13 @@ package dbrepo
 
 import (
 	"context"
+	"errors"
+	"log"
 	"time"
 
 	"github.com/robert-gherlan/go-booking-web-app/internal/models"
+	"golang.org/x/crypto/bcrypt"
 )
-
-func (m *postgresDBRepo) AllUsers() bool {
-	return true
-}
 
 // InsertReservation inserts a reservation to database
 func (m *postgresDBRepo) InsertReservation(res models.Reservation) (int, error) {
@@ -92,17 +91,19 @@ func (m *postgresDBRepo) SearchAvailabilityForAllRoomsByDates(startDate, endDate
 	defer cancel()
 	var rooms []models.Room
 	stmt := `
-		SELECT 
-			r.id,
-			r.name
-		FROM rooms r 
-		WHERE r.id NOT IN (SELECT room_id FROM room_reservations rr WHERE $1 < rr.end_date AND $2 > rr.start_date)
-		`
+		SELECT
+			r.id, r.room_name
+		FROM
+			rooms r
+		WHERE r.id NOT IN
+		(SELECT room_id FROM room_restrictions rr WHERE $1 < rr.end_date AND $2 > rr.start_date);
+	`
 
 	rows, err := m.DB.QueryContext(ctx, stmt, startDate, endDate)
 	if err != nil {
 		return rooms, err
 	}
+	defer rows.Close()
 
 	for rows.Next() {
 		var room models.Room
@@ -135,4 +136,389 @@ func (m *postgresDBRepo) GetRoomByID(id int) (models.Room, error) {
 	}
 
 	return room, nil
+}
+
+func (m *postgresDBRepo) GetUserByID(id int) (models.User, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `SELECT id, first_name, last_name, email, password, access_level, created_at, updated_at FROM users WHERE id = $1`
+	row := m.DB.QueryRowContext(ctx, query, id)
+	var u models.User
+	err := row.Scan(
+		&u.ID,
+		&u.FirstName,
+		&u.LastName,
+		&u.Email,
+		&u.Password,
+		&u.AccessLevel,
+		&u.CreatedAt,
+		&u.UpdatedAt,
+	)
+	if err != nil {
+		return u, err
+	}
+
+	return u, nil
+}
+
+// UpdateUser is used to update user details
+func (m *postgresDBRepo) UpdateUser(u models.User) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `UPDATE users SET first_name = $1, last_name = $2, email = $3, access_level = $4, updated_at = $5 WHERE id = $6`
+	_, err := m.DB.ExecContext(ctx, query, u.FirstName, u.LastName, u.Email, u.AccessLevel, time.Now(), u.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// Authenticate is used to authenticate an user
+func (m *postgresDBRepo) Authenticate(email, password string) (int, string, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var id int
+	var hashedPassword string
+
+	query := `SELECT id, password FROM users WHERE email = $1`
+	row := m.DB.QueryRowContext(ctx, query, email)
+	err := row.Scan(&id, &hashedPassword)
+	if err != nil {
+		return id, "", err
+	}
+
+	err = bcrypt.CompareHashAndPassword([]byte(hashedPassword), []byte(password))
+	if err == bcrypt.ErrMismatchedHashAndPassword {
+		return 0, "", errors.New("incorrect password")
+	} else if err != nil {
+		return 0, "", err
+	}
+
+	return id, hashedPassword, nil
+}
+
+// AllReservations retrieve all reservations
+func (m *postgresDBRepo) AllReservations() ([]models.Reservation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	var reservations []models.Reservation
+	stmt := `
+	SELECT
+		r.id,
+       	r.first_name,
+       	r.last_name,
+       	r.email,
+       	r.phone,
+       	r.start_date,
+       	r.end_date,
+       	r.room_id,
+       	r.created_at,
+       	r.updated_at,
+		rm.id,
+		rm.room_name
+	FROM reservations r
+	LEFT JOIN rooms rm ON r.room_id = rm.id
+	ORDER BY r.start_date ASC
+	`
+
+	rows, err := m.DB.QueryContext(ctx, stmt)
+	if err != nil {
+		return reservations, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var reservation models.Reservation
+		err := rows.Scan(
+			&reservation.ID,
+			&reservation.FirstName,
+			&reservation.LastName,
+			&reservation.Email,
+			&reservation.Phone,
+			&reservation.StartDate,
+			&reservation.EndDate,
+			&reservation.RoomID,
+			&reservation.CreatedAt,
+			&reservation.UpdatedAt,
+			&reservation.Room.ID,
+			&reservation.Room.RoomName,
+		)
+		if err != nil {
+			return reservations, err
+		}
+		reservations = append(reservations, reservation)
+	}
+
+	if err = rows.Err(); err != nil {
+		return reservations, err
+	}
+
+	return reservations, nil
+}
+
+// AllNewReservations retrieve all new reservations
+func (m *postgresDBRepo) AllNewReservations() ([]models.Reservation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	var reservations []models.Reservation
+	stmt := `
+	SELECT
+		r.id,
+       	r.first_name,
+       	r.last_name,
+       	r.email,
+       	r.phone,
+       	r.start_date,
+       	r.end_date,
+       	r.room_id,
+       	r.created_at,
+       	r.updated_at,
+		r.processed,
+		rm.id,
+		rm.room_name
+	FROM reservations r
+	LEFT JOIN rooms rm ON r.room_id = rm.id
+	WHERE r.processed = 0
+	ORDER BY r.start_date ASC
+	`
+
+	rows, err := m.DB.QueryContext(ctx, stmt)
+	if err != nil {
+		return reservations, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var reservation models.Reservation
+		err := rows.Scan(
+			&reservation.ID,
+			&reservation.FirstName,
+			&reservation.LastName,
+			&reservation.Email,
+			&reservation.Phone,
+			&reservation.StartDate,
+			&reservation.EndDate,
+			&reservation.RoomID,
+			&reservation.CreatedAt,
+			&reservation.UpdatedAt,
+			&reservation.Processed,
+			&reservation.Room.ID,
+			&reservation.Room.RoomName,
+		)
+		if err != nil {
+			return reservations, err
+		}
+		reservations = append(reservations, reservation)
+	}
+
+	if err = rows.Err(); err != nil {
+		return reservations, err
+	}
+
+	return reservations, nil
+}
+
+// GetReservationByID retrieve a reservation by its id
+func (m *postgresDBRepo) GetReservationByID(id int) (models.Reservation, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	var reservation models.Reservation
+	stmt := `
+	SELECT
+		r.id,
+       	r.first_name,
+       	r.last_name,
+       	r.email,
+       	r.phone,
+       	r.start_date,
+       	r.end_date,
+       	r.room_id,
+       	r.created_at,
+       	r.updated_at,
+		r.processed,
+		rm.id,
+		rm.room_name
+	FROM reservations r
+	LEFT JOIN rooms rm ON r.room_id = rm.id
+	WHERE r.id = $1
+	ORDER BY r.start_date ASC
+	`
+
+	rows := m.DB.QueryRowContext(ctx, stmt, id)
+	err := rows.Scan(
+		&reservation.ID,
+		&reservation.FirstName,
+		&reservation.LastName,
+		&reservation.Email,
+		&reservation.Phone,
+		&reservation.StartDate,
+		&reservation.EndDate,
+		&reservation.RoomID,
+		&reservation.CreatedAt,
+		&reservation.UpdatedAt,
+		&reservation.Processed,
+		&reservation.Room.ID,
+		&reservation.Room.RoomName,
+	)
+
+	if err != nil {
+		return reservation, err
+	}
+
+	return reservation, nil
+}
+
+// UpdateReservation is used to update reservation details
+func (m *postgresDBRepo) UpdateReservation(u models.Reservation) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `UPDATE reservations SET first_name = $1, last_name = $2, email = $3, phone = $4, updated_at = $5 WHERE id = $6`
+	_, err := m.DB.ExecContext(ctx, query, u.FirstName, u.LastName, u.Email, u.Phone, time.Now(), u.ID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteReservationByID is used to delete a reservation by its id
+func (m *postgresDBRepo) DeleteReservationByID(id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `DELETE FROM reservations WHERE id = $1`
+	_, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateProcessedForReservation is used to update the processed field for a reservation by its id
+func (m *postgresDBRepo) UpdateProcessedForReservation(id, processed int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `UPDATE reservations SET processed = $1 WHERE id = $2`
+	_, err := m.DB.ExecContext(ctx, query, processed, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// AllRooms List all rooms.
+func (m *postgresDBRepo) AllRooms() ([]models.Room, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var rooms []models.Room
+
+	query := `select id, room_name, created_at, updated_at from rooms order by room_name`
+
+	rows, err := m.DB.QueryContext(ctx, query)
+	if err != nil {
+		return rooms, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var rm models.Room
+		err := rows.Scan(
+			&rm.ID,
+			&rm.RoomName,
+			&rm.CreatedAt,
+			&rm.UpdatedAt,
+		)
+		if err != nil {
+			return rooms, err
+		}
+		rooms = append(rooms, rm)
+	}
+
+	if err = rows.Err(); err != nil {
+		return rooms, err
+	}
+
+	return rooms, nil
+}
+
+// GetRestrictionsForRoomByDate returns restrictions for a room by date range
+func (m *postgresDBRepo) GetRestrictionsForRoomByDate(roomID int, start, end time.Time) ([]models.RoomRestriction, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	var restrictions []models.RoomRestriction
+
+	query := `
+		select id, coalesce(reservation_id, 0), restriction_id, room_id, start_date, end_date
+		from room_restrictions where $1 < end_date and $2 >= start_date
+		and room_id = $3
+`
+
+	rows, err := m.DB.QueryContext(ctx, query, start, end, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var r models.RoomRestriction
+		err := rows.Scan(
+			&r.ID,
+			&r.ReservationID,
+			&r.RestrictionID,
+			&r.RoomID,
+			&r.StartDate,
+			&r.EndDate,
+		)
+		if err != nil {
+			return nil, err
+		}
+		restrictions = append(restrictions, r)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return restrictions, nil
+}
+
+// InsertBlockForRoom inserts a room restriction
+func (m *postgresDBRepo) InsertBlockForRoom(id int, startDate time.Time) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `insert into room_restrictions (start_date, end_date, room_id, restriction_id,
+			created_at, updated_at) values ($1, $2, $3, $4, $5, $6)`
+
+	_, err := m.DB.ExecContext(ctx, query, startDate, startDate.AddDate(0, 0, 1), id, 2, time.Now(), time.Now())
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
+}
+
+// DeleteBlockByID deletes a room restriction
+func (m *postgresDBRepo) DeleteBlockByID(id int) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+
+	query := `delete from room_restrictions where id = $1`
+
+	_, err := m.DB.ExecContext(ctx, query, id)
+	if err != nil {
+		log.Println(err)
+		return err
+	}
+	return nil
 }

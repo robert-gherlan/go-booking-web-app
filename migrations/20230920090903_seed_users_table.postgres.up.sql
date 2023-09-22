@@ -1,0 +1,2 @@
+INSERT INTO users (first_name,last_name,phone,email,password,access_level,created_at,updated_at) VALUES
+('Admin','Admin','555-555-5555','admin@admin.com','$2a$12$R85lQpjKu48d9FdBpqMKrOt12FzS8fd.J59faGobLY.d7r96DiJJ6',1,'2023-09-20 00:00:00.000','2023-09-20 00:00:00.000');

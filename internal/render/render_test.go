@@ -9,12 +9,15 @@ import (
 
 func TestAddDefaultData(t *testing.T) {
 	var td models.TemplateData
+
 	r, err := getSession()
 	if err != nil {
 		t.Error(err)
 	}
 
+	session.Put(r.Context(), "user_id", "1")
 	session.Put(r.Context(), "flash", "123")
+
 	result := AddDefaultData(&td, r)
 
 	if result.Flash != "123" {
@@ -37,26 +40,15 @@ func TestRenderTemplate(t *testing.T) {
 	}
 
 	var ww myWriter
+
 	err = Template(&ww, r, "home.page.tmpl", &models.TemplateData{})
 	if err != nil {
-		t.Error(err)
+		t.Error("error writing template to browser")
 	}
 
-	err = Template(&ww, r, "non-existing-template.page.tmpl", &models.TemplateData{})
+	err = Template(&ww, r, "non-existent.page.tmpl", &models.TemplateData{})
 	if err == nil {
 		t.Error("rendered template that does not exist")
-	}
-}
-
-func TestNewTemplates(t *testing.T) {
-	NewRenderer(app)
-}
-
-func TestCreateTemplateCache(t *testing.T) {
-	pathToTemplates = "./../../templates"
-	_, err := CreateTemplateCache()
-	if err != nil {
-		t.Error(err)
 	}
 }
 
@@ -69,19 +61,18 @@ func getSession() (*http.Request, error) {
 	ctx := r.Context()
 	ctx, _ = session.Load(ctx, r.Header.Get("X-Session"))
 	r = r.WithContext(ctx)
+
 	return r, nil
 }
 
-type myWriter struct {
+func TestNewTemplates(t *testing.T) {
+	NewRenderer(app)
 }
 
-func (tw *myWriter) Header() http.Header {
-	return http.Header{}
-}
-
-func (tw *myWriter) WriteHeader(i int) {}
-
-func (tw *myWriter) Write(b []byte) (int, error) {
-	length := len(b)
-	return length, nil
+func TestCreateTemplateCache(t *testing.T) {
+	pathToTemplates = "./../../templates"
+	_, err := CreateTemplateCache()
+	if err != nil {
+		t.Error(err)
+	}
 }

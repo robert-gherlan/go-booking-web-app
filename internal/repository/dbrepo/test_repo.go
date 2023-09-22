@@ -8,10 +8,6 @@ import (
 	"github.com/robert-gherlan/go-booking-web-app/internal/models"
 )
 
-func (m *testDBRepo) AllUsers() bool {
-	return true
-}
-
 // InsertReservation inserts a reservation into the database
 func (m *testDBRepo) InsertReservation(res models.Reservation) (int, error) {
 	// if the room id is 2, then fail; otherwise, pass
@@ -102,4 +98,86 @@ func (m *testDBRepo) GetRoomByID(id int) (models.Room, error) {
 		return room, errors.New("some error")
 	}
 	return room, nil
+}
+
+// GetUserByID gets a user by id
+func (m *testDBRepo) GetUserByID(id int) (models.User, error) {
+	var user models.User
+	if id > 2 {
+		return user, errors.New("some error")
+	}
+	return user, nil
+}
+
+func (m *testDBRepo) UpdateUser(u models.User) error {
+	return nil
+}
+
+func (m *testDBRepo) Authenticate(email, password string) (int, string, error) {
+	return 0, "", nil
+}
+
+func (m *testDBRepo) AllReservations() ([]models.Reservation, error) {
+	return []models.Reservation{}, nil
+}
+
+func (m *testDBRepo) AllNewReservations() ([]models.Reservation, error) {
+	return []models.Reservation{}, nil
+}
+
+func (m *testDBRepo) GetReservationByID(id int) (models.Reservation, error) {
+	return models.Reservation{}, nil
+}
+
+func (m *testDBRepo) UpdateReservation(u models.Reservation) error {
+	return nil
+}
+
+func (m *testDBRepo) DeleteReservationByID(id int) error {
+	return nil
+}
+
+func (m *testDBRepo) UpdateProcessedForReservation(id, processed int) error {
+	return nil
+}
+
+func (m *testDBRepo) AllRooms() ([]models.Room, error) {
+	var rooms []models.Room
+	rooms = append(rooms, models.Room{ID: 1})
+	return rooms, nil
+}
+
+// GetRestrictionsForRoomByDate returns restrictions for a room by date range
+func (m *testDBRepo) GetRestrictionsForRoomByDate(roomID int, start, end time.Time) ([]models.RoomRestriction, error) {
+	var restrictions []models.RoomRestriction
+	// add a block
+	restrictions = append(restrictions, models.RoomRestriction{
+		ID:            1,
+		StartDate:     time.Now(),
+		EndDate:       time.Now().AddDate(0, 0, 1),
+		RoomID:        1,
+		ReservationID: 0,
+		RestrictionID: 2,
+	})
+
+	// add a reservation
+	restrictions = append(restrictions, models.RoomRestriction{
+		ID:            2,
+		StartDate:     time.Now().AddDate(0, 0, 2),
+		EndDate:       time.Now().AddDate(0, 0, 3),
+		RoomID:        1,
+		ReservationID: 1,
+		RestrictionID: 1,
+	})
+	return restrictions, nil
+}
+
+// InsertBlockForRoom inserts a room restriction
+func (m *testDBRepo) InsertBlockForRoom(id int, startDate time.Time) error {
+	return nil
+}
+
+// DeleteBlockByID deletes a room restriction
+func (m *testDBRepo) DeleteBlockByID(id int) error {
+	return nil
 }
